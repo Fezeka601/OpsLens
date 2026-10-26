@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16
+    container_name: opslens-db
+    environment:
+      POSTGRES_DB: opslens
+      POSTGRES_USER: opslens_user
+      POSTGRES_PASSWORD: ${OPSLENS_DOCKER_DB_PASSWORD:?Set OPSLENS_DOCKER_DB_PASSWORD in your environment}
+    ports:
+      - "5433:5432"
+    volumes:
+      - opslens_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opslens_user -d opslens"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  init-db:
+    build: .
+    command: ["python", "-c", "from opslens.database.schema import create_tables; create_tables()"]
+    environment:
+      OPSLENS_DB_HOST: db
+      OPSLENS_DB_PORT: 5432
+      OPSLENS_DB_NAME: opslens
+      OPSLENS_DB_USER: opslens_user
+      OPSLENS_DB_PASSWORD: ${OPSLENS_DOCKER_DB_PASSWORD:?Set OPSLENS_DOCKER_DB_PASSWORD in your environment}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    container_name: opslens-api
+    environment:
+      OPSLENS_DB_HOST: db
+      OPSLENS_DB_PORT: 5432
+      OPSLENS_DB_NAME: opslens
+      OPSLENS_DB_USER: opslens_user
+      OPSLENS_DB_PASSWORD: ${OPSLENS_DOCKER_DB_PASSWORD:?Set OPSLENS_DOCKER_DB_PASSWORD in your environment}
+    ports:
+      - "8000:8000"
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+
+volumes:
+  opslens_data:

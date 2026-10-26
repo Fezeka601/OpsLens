@@ -9,6 +9,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 
+
 from opslens.models.security_event import SecurityEvent
 
 from opslens.database.event_repository import EventRepository
@@ -142,6 +143,7 @@ app.add_middleware(
 # --------------------------------------------------
 # Repositories and processing components
 # --------------------------------------------------
+
 
 event_repository = EventRepository()
 alert_repository = AlertRepository()
